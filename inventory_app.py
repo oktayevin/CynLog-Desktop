@@ -498,7 +498,13 @@ class InventoryOrdersApp:
             if filepath.lower().endswith((".xls", ".xlsx")):
                 df = pd.read_excel(filepath)
             else:
-                df = pd.read_csv(filepath)
+                try:
+                    df = pd.read_csv(filepath)
+                except UnicodeDecodeError:
+                    try:
+                        df = pd.read_csv(filepath, encoding='ISO-8859-9')
+                    except UnicodeDecodeError:
+                        df = pd.read_csv(filepath, encoding='windows-1254')
             df.columns = [c.strip().lower() for c in df.columns]
             required = ["irsaliye numarası","şube adı","stok kodu","ürün adı","tarih","miktar","birim"]
             for col in required:
