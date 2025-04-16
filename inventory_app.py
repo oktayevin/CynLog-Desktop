@@ -5,7 +5,6 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 import os
 import cv2
-from pyzbar import pyzbar
 from dotenv import load_dotenv
 import threading
 import pandas as pd
@@ -17,7 +16,6 @@ import matplotlib.dates as mdates
 
 # Ortam değişkenlerini yükle
 load_dotenv()
-os.environ['ZBAR_LIBRARY_PATH'] = '/opt/homebrew/Cellar/zbar/0.23.93_2/lib/libzbar.dylib'
 
 # Veritabanı bağlantısı bilgilerini ayarlayın
 DB_HOST = os.getenv("DB_HOST")
@@ -129,7 +127,7 @@ class InventoryOrdersApp:
                     stock_code VARCHAR(50) NOT NULL,
                     product_name VARCHAR(200) NOT NULL,
                     unit VARCHAR(20) NOT NULL,
-                    quantity INTEGER NOT NULL CHECK (quantity > 0),
+                    quantity NUMERIC(10,2) NOT NULL CHECK (quantity > 0),
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """)
@@ -141,7 +139,7 @@ class InventoryOrdersApp:
                     stock_code VARCHAR(50) NOT NULL,
                     product_name VARCHAR(200) NOT NULL,
                     unit VARCHAR(20) NOT NULL,
-                    quantity INTEGER NOT NULL CHECK (quantity > 0),
+                    quantity NUMERIC(10,2) NOT NULL CHECK (quantity > 0),
                     deposit_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     notes TEXT
                 )
@@ -154,7 +152,7 @@ class InventoryOrdersApp:
                     stock_code VARCHAR(50) NOT NULL,
                     product_name VARCHAR(200) NOT NULL,
                     unit VARCHAR(20) NOT NULL,
-                    quantity INTEGER NOT NULL CHECK (quantity > 0),
+                    quantity NUMERIC(10,2) NOT NULL CHECK (quantity > 0),
                     shop_name VARCHAR(100) NOT NULL,
                     withdrawal_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     notes TEXT
@@ -167,7 +165,7 @@ class InventoryOrdersApp:
                     allocation_id SERIAL PRIMARY KEY,
                     deposit_id INTEGER REFERENCES deposits(deposit_id) ON DELETE CASCADE,
                     withdrawal_id INTEGER REFERENCES withdrawals(withdrawal_id) ON DELETE CASCADE,
-                    allocated_quantity INTEGER NOT NULL CHECK (allocated_quantity > 0),
+                    allocated_quantity NUMERIC(10,2) NOT NULL CHECK (allocated_quantity > 0),
                     allocation_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """)
@@ -665,9 +663,9 @@ class DepositWindow:
         product_name = self.product_name_var.get().strip()
         unit = self.unit_var.get().strip()
         try:
-            quantity = int(self.quantity_entry.get().strip())
+            quantity = round(float(self.quantity_entry.get().strip()), 2)
         except ValueError:
-            messagebox.showerror("Geçersiz Giriş", "Miktar bir tam sayı olmalı.")
+            messagebox.showerror("Geçersiz Giriş", "Miktar bir sayı olmalı.")
             return
         deposit_date = self.date_entry.get().strip()
         if deposit_date == "":
@@ -712,9 +710,9 @@ class WithdrawalWindow:
     def withdraw_product(self):
         stock_code = self.stock_code_entry.get().strip()
         try:
-            quantity = int(self.quantity_entry.get().strip())
+            quantity = round(float(self.quantity_entry.get().strip()), 2)
         except ValueError:
-            messagebox.showerror("Geçersiz Giriş", "Miktar bir tam sayı olmalı.")
+            messagebox.showerror("Geçersiz Giriş", "Miktar bir sayı olmalı.")
             return
         shop_name = self.shop_entry.get().strip()
         withdrawal_date = datetime.now(ZoneInfo("Europe/Istanbul")).strftime("%Y-%m-%d %H:%M:%S")
@@ -1510,7 +1508,7 @@ class OrderEntryWindow:
             messagebox.showerror("Hata", "Lütfen tüm alanları doldurun!")
             return
         try:
-            quantity = int(quantity)
+            quantity = round(float(quantity), 2)
             if quantity <= 0:
                 raise ValueError
         except ValueError:
